@@ -32,7 +32,11 @@
 </head>
 <body>
   <div class="container">
-    <img src="assets/banner.png" class="banner" alt="中文寫字練習紙生成器">
+    <picture>
+  <source media="(max-width: 600px)" srcset="assets/banner_mobile.png">
+  <img src="assets/banner.png" class="banner" alt="中文寫字練習紙生成器">
+     </picture>
+
     <div class="card">
       <label for="titleInput">自訂標題</label>
       <input id="titleInput" type="text" value="中文寫字練習紙" style="width:100%;margin-bottom:10px"/>
