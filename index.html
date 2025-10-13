@@ -111,7 +111,16 @@
   </div>
 
   <!-- libs -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.3/dist/jspdf.umd.min.js" defer></script>
+  <script>
+  // dynamically load jsPDF to ensure it's fully ready before use
+  window.jsPDFReady = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = "https://cdn.jsdelivr.net/npm/jspdf@2.5.3/dist/jspdf.umd.min.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("jsPDF 載入失敗"));
+    document.head.appendChild(s);
+  });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 
@@ -324,9 +333,15 @@
 
     async function exportPDF(){
       if(!canvases || canvases.length===0){ alert('請先生成練習紙！'); return; }
-      const ensurePDF = ()=> new Promise((resolve,reject)=>{
-        let tries=0; const t=setInterval(()=>{ tries++; if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);resolve();} if(tries>100){clearInterval(t);reject(new Error('jsPDF 載入逾時'));}},100);
-      });
+      const ensurePDF = async () => {
+  try {
+    await window.jsPDFReady;
+    if (window.jspdf && window.jspdf.jsPDF) return;
+  } catch(e) {
+    throw new Error('jsPDF 載入失敗');
+  }
+};
+
       try{
         await ensurePDF();
         const { jsPDF } = window.jspdf;
