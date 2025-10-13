@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>中文寫字練習紙生成器</title>
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    @font-face { font-family:'DFKai-SB'; src: local('標楷體'), local('DFKai-SB'), local('BiauKai'); }
+    body{font-family:'Noto Sans TC',sans-serif;margin:0;padding:0;background:linear-gradient(135deg,#FEF3C7 0%,#FED7AA 50%,#FEE2E2 100%);color:#111827}
+    .container{max-width:1200px;margin:0 auto;padding:16px 20px 40px}
+    .banner{display:block;width:100%;max-width:1200px;margin:8px auto 16px;border-radius:12px}
+    .card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,0.08);margin-bottom:18px}
+    label{display:block;margin-bottom:6px;font-weight:600}
+    textarea{width:100%;min-height:140px;padding:10px;border:1px solid #ddd;border-radius:6px;font-family:'DFKai-SB','Noto Serif TC',serif}
+    input,select{padding:8px;border:1px solid #ddd;border-radius:6px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1 1 220px;min-width:180px}
+    #preview{border:2px dashed #ddd;padding:12px;min-height:360px;overflow:auto;background:#fafafa;display:flex;flex-direction:column;align-items:center}
+    canvas{max-width:100%;display:block;margin:8px auto;border-radius:6px;background:#fff}
+    .btn{padding:10px 14px;border-radius:6px;border:none;cursor:pointer}
+    .btn-primary{background:#111827;color:#fff}
+    .btn-ghost{background:#fff;border:1px solid #ddd}
+    .small{font-size:0.9rem;padding:6px 8px}
+    .file-input{display:flex;gap:8px;align-items:center}
+    footer{font-size:0.9rem;color:#666;text-align:center;margin-top:12px}
+    .note{font-size:0.9rem;color:#444;margin-top:6px}
+    .toolbar{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="assets/banner.png" class="banner" alt="中文寫字練習紙生成器">
+    <div class="card">
+      <label for="titleInput">自訂標題</label>
+      <input id="titleInput" type="text" value="中文寫字練習紙" style="width:100%;margin-bottom:10px"/>
+
+      <label for="inputText">練習文字</label>
+      <div class="toolbar">
+        <button id="underlineBtn" class="btn btn-ghost small">底線</button>
+      </div>
+      <textarea id="inputText">請輸入文章內容
+
+提示：
+輸入換行會在練習紙中換行，標點符號單獨佔格</textarea>
+
+      <div class="row" style="margin-top:12px">
+        <div class="col"><label for="gridSize">方格大小（mm，5–100）</label><input id="gridSize" type="number" value="10" min="5" max="100"></div>
+        <div class="col"><label for="marginSize">左右邊界（mm）</label><input id="marginSize" type="number" value="10" min="0" max="100"></div>
+        <div class="col"><label for="fontSelect">字體</label>
+          <select id="fontSelect"><option value="DFKai-SB" selected>標楷體</option><option value="Noto Serif TC">Noto Serif TC</option><option value="Noto Sans TC">Noto Sans TC</option><option value="Microsoft JhengHei">微軟正黑體</option></select>
+        </div>
+        <div class="col"><label for="orientation">紙張方向</label><select id="orientation"><option value="portrait" selected>直向</option><option value="landscape">橫向</option></select></div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <div class="col">
+          <label for="fontColor">字體顏色</label>
+          <select id="fontColor">
+            <option value="rgba(0,0,0,0.4)" selected>預設 40% 淺灰</option>
+            <option value="#000000">黑</option>
+            <option value="#87CEFA">淺藍</option>
+            <option value="#FFB6C1">粉紅</option>
+            <option value="#808080">灰</option>
+            <option value="#FFD580">淺橙</option>
+            <option value="#90EE90">淺綠</option>
+          </select>
+        </div>
+        <div class="col">
+          <label for="innerStyle">田字格內線樣式</label>
+          <select id="innerStyle"><option value="double" selected>雙平行線</option><option value="parallel">單平行線</option><option value="cross">十字＋斜線</option></select>
+        </div>
+        <div class="col">
+          <label>文字排列方向</label>
+          <div><input id="layoutH" type="radio" name="layout" value="h" checked> <label for="layoutH" style="display:inline;font-weight:400">橫向排列</label></div>
+          <div><input id="layoutV" type="radio" name="layout" value="v"> <label for="layoutV" style="display:inline;font-weight:400">垂直排列（實驗）</label></div>
+        </div>
+        <div class="col">
+          <label for="gridFillDirection">格仔填滿方向</label>
+          <select id="gridFillDirection">
+            <option value="horizontal" selected>橫向填滿整頁</option>
+            <option value="vertical">垂直填滿整頁</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="row">
+        <div class="file-input col">
+          <label for="imageInput">以圖片輸入（支援 HEIC 自動轉換）</label>
+          <input id="imageInput" type="file" accept="image/*">
+          <button id="extractBtn" class="btn btn-ghost small">從圖片擷取文字</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <button id="generateBtn" class="btn btn-primary">生成練習紙</button>
+          <button id="downloadPdfBtn" class="btn btn-ghost">下載 PDF</button>
+          <button id="exportPngBtn" class="btn btn-ghost">匯出 PNG（可匯入 Canva）</button>
+          <button id="printBtn" class="btn btn-ghost">列印</button>
+        </div>
+      </div>
+      <p class="note">格線顏色固定為淺棕 #FFE4B5。匯出 PNG 可直接上傳到 Canva。</p>
+    </div>
+
+    <div class="card"><div id="preview">預覽區（點「生成練習紙」）</div></div>
+    <footer>© 中文寫字練習紙生成器</footer>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.3/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
+  <script>
+  (function(){
+    const titleInput = document.getElementById('titleInput');
+    const inputText = document.getElementById('inputText');
+    const gridSizeInput = document.getElementById('gridSize');
+    const marginSizeInput = document.getElementById('marginSize');
+    const fontSelect = document.getElementById('fontSelect');
+    const fontColorSelect = document.getElementById('fontColor');
+    const innerStyleSelect = document.getElementById('innerStyle');
+    const orientation = document.getElementById('orientation');
+    const layoutH = document.getElementById('layoutH');
+    const layoutV = document.getElementById('layoutV');
+    const gridFillDirection = document.getElementById('gridFillDirection');
+    const preview = document.getElementById('preview');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const exportPngBtn = document.getElementById('exportPngBtn');
+    const printBtn = document.getElementById('printBtn');
+    const imageInput = document.getElementById('imageInput');
+    const extractBtn = document.getElementById('extractBtn');
+    const underlineBtn = document.getElementById('underlineBtn');
+
+    let canvases = [];
+
+    underlineBtn.addEventListener('click', ()=>{
+      const ta = inputText;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      if(start===end){ alert('請先選取要加底線的文字'); return; }
+      const before = ta.value.slice(0,start);
+      const sel = ta.value.slice(start,end);
+      const after = ta.value.slice(end);
+      ta.value = before + '__' + sel + '__' + after;
+      ta.focus();
+      ta.selectionStart = start + 2;
+      ta.selectionEnd = end + 2;
+    });
+
+    function tokenizeLine(line){
+      const tokens = [];
+      let i = 0;
+      while(i < line.length){
+        if(line.startsWith('__', i)){
+          const j = line.indexOf('__', i+2);
+          if(j !== -1){
+            const inner = line.slice(i+2, j);
+            if(inner.length > 0) tokens.push({text: inner, underline: true});
+            i = j + 2;
+            continue;
+          }
+        }
+        tokens.push({text: line[i], underline: false});
+        i++;
+      }
+      return tokens;
+    }
+    function expandTokensToCells(tokens){
+      const cells = [];
+      for(const t of tokens){
+        if(t.underline){
+          const startIndex = cells.length;
+          for(const ch of Array.from(t.text)){
+            cells.push({ch, underlineGroup: startIndex, underline: true});
+          }
+        } else {
+          for(const ch of Array.from(t.text)){
+            cells.push({ch, underlineGroup: -1, underline: false});
+          }
+        }
+      }
+      return cells;
+    }
+    function parseTextToRows(text, cols){
+      const lines = text.replace(/\r/g,'').split('\n'); // keep empty lines
+      const rows = [];
+      for(const line of lines){
+        const tokens = tokenizeLine(line);
+        const cells = expandTokensToCells(tokens);
+        for(let i=0;i<cells.length;i+=cols){
+          rows.push(cells.slice(i, i+cols));
+        }
+        if(cells.length === 0){ rows.push([]); }
+      }
+      return rows;
+    }
+
+    function drawTianzige(ctx,x,y,size,style){
+      ctx.lineWidth=1.2; ctx.strokeStyle='#FFE4B5'; ctx.strokeRect(x,y,size,size);
+      ctx.save();
+      ctx.lineWidth=0.9; ctx.setLineDash([3,3]);
+      const cx = x+size/2, cy=y+size/2;
+      if(style==='double'){
+        ctx.beginPath(); ctx.moveTo(x+size/3,y); ctx.lineTo(x+size/3,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+2*size/3,y); ctx.lineTo(x+2*size/3,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y+size/3); ctx.lineTo(x+size,y+size/3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y+2*size/3); ctx.lineTo(x+size,y+2*size/3); ctx.stroke();
+      } else if(style==='parallel'){
+        ctx.beginPath(); ctx.moveTo(cx,y); ctx.lineTo(cx,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x+size,cy); ctx.stroke();
+      } else if(style==='cross'){
+        ctx.beginPath(); ctx.moveTo(cx,y); ctx.lineTo(cx,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x+size,cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+size,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+size,y); ctx.lineTo(x,y+size); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function mmToPx(mm, orient){
+      const a4WidthPx = orient==='landscape'?1122:793;
+      const a4WidthMm = orient==='landscape'?297:210;
+      return mm * (a4WidthPx / a4WidthMm);
+    }
+
+    function createPages(text, gridMm, marginMm, font, fontColor, innerStyle, orient, gridFillDir){
+      const a4WidthPx = orient==='landscape'?1122:793;
+      const a4HeightPx = orient==='landscape'?793:1122;
+      const marginPx = mmToPx(marginMm, orient);
+      let gridPx = mmToPx(gridMm, orient);
+      const usableWidthPx = a4WidthPx - 2*marginPx;
+      let cols = Math.max(1, Math.floor(usableWidthPx / gridPx));
+
+      if(gridFillDir === 'horizontal'){
+        gridPx = usableWidthPx / cols;
+      } else {
+        const topGap = 60;
+        const usableHeightPx = a4HeightPx - topGap;
+        let rowsPerPage = Math.max(1, Math.floor(usableHeightPx / gridPx));
+        gridPx = usableHeightPx / rowsPerPage;
+      }
+
+      cols = Math.max(1, Math.floor(usableWidthPx / gridPx));
+      const rows = parseTextToRows(text, cols);
+      const topGap = 60;
+      const rowsPerPage = Math.max(1, Math.floor((a4HeightPx - topGap) / gridPx));
+
+      const pages = [];
+      for(let i=0;i<rows.length;i+=rowsPerPage){
+        pages.push(rows.slice(i, i+rowsPerPage));
+      }
+      if(pages.length===0){ pages.push([[]]); }
+
+      const canvases = pages.map((rowsOfPage, pageIndex)=>{
+        const canvas = document.createElement('canvas');
+        canvas.width = a4WidthPx; canvas.height = a4HeightPx;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle='#000'; ctx.font='20px "DFKai-SB","Noto Sans TC"'; ctx.textAlign='left';
+        ctx.fillText(titleInput.value || '中文寫字練習紙', marginPx + 10, 30);
+
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle = fontColor; ctx.font = Math.floor(gridPx*0.65) + 'px "' + font + '"';
+
+        for(let r=0;r<rowsOfPage.length;r++){
+          const row = rowsOfPage[r];
+          const y = 60 + r * gridPx;
+          for(let c=0;c<cols;c++){
+            const x = marginPx + c * gridPx;
+            drawTianzige(ctx, x, y, gridPx, innerStyle);
+          }
+          // draw characters
+          for(let c=0;c<row.length;c++){
+            const cell = row[c];
+            if(!cell) continue;
+            const xCenter = marginPx + c*gridPx + gridPx/2;
+            if(cell.ch){ ctx.fillText(cell.ch, xCenter, y + gridPx/2); }
+          }
+          // draw underline spans
+          let c = 0;
+          while(c < row.length){
+            const cell = row[c];
+            if(cell && cell.underline && cell.underlineGroup >= 0){
+              const groupId = cell.underlineGroup;
+              let start = c, end = c;
+              while(end+1 < row.length && row[end+1] && row[end+1].underlineGroup === groupId){ end++; }
+              const pad = gridPx*0.1;
+              const thickness = Math.max(1, Math.round(gridPx/20));
+              const ux = marginPx + start*gridPx + pad;
+              const uw = (end - start + 1) * gridPx - pad*2;
+              const uy = y + gridPx - Math.max(2, Math.round(gridPx*0.12));
+              ctx.fillStyle = fontColor; ctx.fillRect(ux, uy, uw, thickness);
+              c = end + 1;
+            } else { c++; }
+          }
+        }
+
+        canvas._pageIndex = pageIndex + 1;
+        return canvas;
+      });
+
+      return canvases;
+    }
+
+    function generate(){
+      const text = inputText.value || '';
+      const gridMm = Math.max(5, Math.min(100, parseFloat(gridSizeInput.value) || 10));
+      const marginMm = Math.max(0, parseFloat(marginSizeInput.value) || 10);
+      const font = fontSelect.value || 'DFKai-SB';
+      const fontColor = fontColorSelect.value || 'rgba(0,0,0,0.4)';
+      const innerStyle = innerStyleSelect.value || 'double';
+      const orient = orientation.value === 'landscape' ? 'landscape' : 'portrait';
+      const gfill = gridFillDirection.value;
+      canvases = createPages(text, gridMm, marginMm, font, fontColor, innerStyle, orient, gfill);
+      const preview = document.getElementById('preview');
+      preview.innerHTML=''; canvases.forEach(c=>preview.appendChild(c));
+    }
+    document.getElementById('generateBtn').addEventListener('click', generate);
+
+    async function exportPDF(){
+      if(!canvases || canvases.length===0){ alert('請先生成練習紙！'); return; }
+      const ensurePDF = ()=> new Promise((resolve,reject)=>{
+        let tries=0; const t=setInterval(()=>{ tries++; if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);resolve();} if(tries>50){clearInterval(t);reject(new Error('jsPDF 載入逾時'));}},100);
+      });
+      try{
+        await ensurePDF();
+        const { jsPDF } = window.jspdf;
+        const orient = orientation.value === 'landscape' ? 'l' : 'p';
+        const pdf = new jsPDF({orientation:orient, unit:'mm', format:'a4'});
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const marginMm = Math.max(0, parseFloat(marginSizeInput.value) || 10);
+        canvases.forEach((c, idx)=>{
+          if(idx>0) pdf.addPage();
+          const img = c.toDataURL('image/png');
+          const targetW = pageWidth - 2*marginMm;
+          const ratio = c.height / c.width;
+          const targetH = targetW * ratio;
+          const topOffset = Math.max(5, (pageHeight - targetH)/2);
+          pdf.addImage(img, 'PNG', marginMm, topOffset, targetW, targetH);
+          const pageText = `第 ${idx+1} 頁／共 ${canvases.length} 頁`;
+          try { pdf.setFont('DFKai-SB'); pdf.setFontSize(11); } catch(e){ pdf.setFont('Helvetica'); pdf.setFontSize(10); }
+          const tw = pdf.getTextWidth(pageText);
+          pdf.text(pageText, pageWidth - marginMm - tw, pageHeight - 10);
+        });
+        pdf.save('中文寫字練習紙.pdf');
+      }catch(e){ console.error(e); alert('PDF 生成失敗：' + e.message); }
+    }
+    document.getElementById('downloadPdfBtn').addEventListener('click', exportPDF);
+
+    document.getElementById('exportPngBtn').addEventListener('click', ()=>{
+      if(!canvases || canvases.length===0){ alert('請先生成練習紙！'); return; }
+      const title = (titleInput.value||'中文寫字練習紙').replace(/[\/:*?"<>|]/g,'').trim() || 'sheet';
+      const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+      canvases.forEach((c, i)=>{
+        const name = `${title}_${dateStr}_p${i+1}.png`;
+        c.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); a.remove(); }, 'image/png');
+      });
+    });
+
+    document.getElementById('printBtn').addEventListener('click', ()=>{
+      if(!canvases || canvases.length===0){ alert('請先生成練習紙！'); return; }
+      const w = window.open('', '_blank');
+      w.document.write('<html><head><title>列印</title><style>body{margin:0;padding:0} img{width:100%;display:block;page-break-after:always}</style></head><body>');
+      canvases.forEach(c=>w.document.write('<img src="'+c.toDataURL('image/png')+'">'));
+      w.document.write('</body></html>'); w.document.close(); setTimeout(()=>w.print(), 400);
+    });
+
+    // OCR + HEIC
+    extractBtn.addEventListener('click', async ()=>{
+      const file = imageInput.files && imageInput.files[0];
+      if(!file) return alert('請先選擇圖片');
+      extractBtn.disabled = true; extractBtn.textContent = '辨識中...';
+      try {
+        let usedFile = file;
+        if(file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')){
+          const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+          usedFile = new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+        }
+        const { data:{ text } } = await Tesseract.recognize(usedFile, 'chi_sim', { logger: m => {} });
+        inputText.value = text.trim() || inputText.value;
+        alert('辨識完成，文字已填入輸入框，請確認後再生成。');
+      } catch (e) {
+        console.error(e);
+        alert('辨識失敗：' + (e && e.message ? e.message : e));
+      } finally {
+        extractBtn.disabled = false; extractBtn.textContent = '從圖片擷取文字';
+      }
+    });
+
+    window.addEventListener('load', ()=>{ setTimeout(()=>document.getElementById('generateBtn').click(), 300); });
+  })();
+  </script>
+</body>
+</html>
