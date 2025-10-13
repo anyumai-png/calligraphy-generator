@@ -111,7 +111,7 @@
   </div>
 
   <!-- libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.3/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.3/jspdf.umd.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 
@@ -325,7 +325,7 @@
     async function exportPDF(){
       if(!canvases || canvases.length===0){ alert('請先生成練習紙！'); return; }
       const ensurePDF = ()=> new Promise((resolve,reject)=>{
-        let tries=0; const t=setInterval(()=>{ tries++; if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);resolve();} if(tries>50){clearInterval(t);reject(new Error('jsPDF 載入逾時'));}},100);
+        let tries=0; const t=setInterval(()=>{ tries++; if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);resolve();} if(tries>100){clearInterval(t);reject(new Error('jsPDF 載入逾時'));}},100);
       });
       try{
         await ensurePDF();
