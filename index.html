@@ -3,204 +3,462 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>中文練字紙 v3.0</title>
+  <title>中文練字紙 v3.1</title>
+
+  <!-- favicon -->
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+
+  <!-- fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- ✅ Preload jsPDF in <head> to avoid iOS timeout -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.3/dist/jspdf.umd.min.js"></script>
+
+  <!-- OCR & HEIC (for 圖片→文字) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
   <style>
-    :root{ --accent:#F97316; --ink:#111827; --card:#ffffff; --line:#FFE4B5; }
+    :root{ --accent:#F97316; --ink:#111827; --line:#FFE4B5; }
     *{ box-sizing:border-box }
     body{ font-family:'Noto Sans TC',sans-serif; margin:0; background:#fff; color:var(--ink); }
-    .container{ max-width:1200px; margin:0 auto; padding:20px; }
-    .banner{ display:block; width:100%; max-width:1200px; margin:0 auto 20px; border-radius:12px; }
-    .card{ background:var(--card); border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.08); margin-bottom:20px; }
+    .container{ max-width:1200px; margin:0 auto; padding:16px; }
+    .banner{ display:block; width:100%; max-width:1200px; margin:0 auto 16px; border-radius:12px; }
+    .card{ background:#fff; border-radius:12px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,.08); margin-bottom:16px; }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; }
+    .col{ flex:1 1 240px; min-width:220px; }
     label{ display:block; margin-bottom:6px; font-weight:700; }
+    input,select{ width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; }
+    .number-wrap{ display:flex; align-items:center; gap:8px; }
+    .stepper{ display:flex; gap:6px; }
+    .stepper button{ width:40px; height:40px; border-radius:8px; border:1px solid #e5e7eb; background:#fff; font-size:20px; line-height:1; }
     textarea{ width:100%; min-height:180px; padding:12px; font-size:18px; line-height:1.7; border:1px solid #e5e7eb; border-radius:10px; font-family:'Noto Sans TC',sans-serif; }
-    input,select{ padding:10px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; }
-    .row{ display:flex; gap:16px; flex-wrap:wrap; }
-    .col{ flex:1 1 220px; min-width:180px; }
-    #preview{ border:2px dashed #e5e7eb; padding:16px; min-height:400px; overflow:auto; background:#fafafa; display:flex; flex-direction:column; align-items:center; }
+    #preview{ border:2px dashed #e5e7eb; padding:12px; min-height:360px; background:#fafafa; display:flex; flex-direction:column; align-items:center; overflow:auto; }
     canvas{ max-width:100%; display:block; margin:8px auto; border-radius:8px; background:#fff; }
-    .btn{ padding:10px 16px; border-radius:10px; border:none; cursor:pointer; font-size:16px; }
-    .btn-primary{ background:var(--accent); color:#fff; }
-    .btn-ghost{ background:#fff; border:1px solid #e5e7eb; color:var(--ink); }
-    .toolbar{ display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
-    footer{ font-size:.9rem; color:#6b7280; text-align:center; margin-top:20px; }
+    .toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+    .btn{ padding:10px 14px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; font-size:16px; }
+    .btn-primary{ background:var(--accent); color:#fff; border:none; }
+    .btn-icon{ width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; }
+    .note{ font-size:.9rem; color:#6b7280; }
+    footer{ text-align:center; color:#6b7280; font-size:.9rem; margin:8px 0 16px; }
+    @media (max-width:640px){
+      .col{ min-width:100% }
+      .toolbar .btn{ flex:1 1 auto }
+    }
   </style>
 </head>
 <body>
   <div class="container">
+
+    <!-- Responsive banner -->
     <picture>
       <source media="(max-width: 600px)" srcset="assets/banner_mobile.png">
       <img src="assets/banner.png" class="banner" alt="中文練字紙">
     </picture>
 
     <div class="card">
-      <label for="titleInput">自訂標題</label>
-      <input id="titleInput" type="text" value="中文練字紙" style="width:100%;margin-bottom:10px"/>
-      <label for="inputText">練習文字</label>
+      <div class="row">
+        <div class="col">
+          <label for="titleInput">自訂標題</label>
+          <input id="titleInput" type="text" value="中文練字紙" />
+        </div>
+        <div class="col">
+          <label for="orientation">紙張方向</label>
+          <select id="orientation">
+            <option value="landscape" selected>橫向 A4</option>
+            <option value="portrait">直向 A4</option>
+          </select>
+        </div>
+        <div class="col">
+          <label for="innerStyle">田字格內線樣式</label>
+          <select id="innerStyle">
+            <option value="double" selected>雙平行線</option>
+            <option value="parallel">單平行線</option>
+            <option value="cross">十字＋斜線</option>
+          </select>
+        </div>
+        <div class="col">
+          <label for="fontSelect">字體</label>
+          <select id="fontSelect">
+            <option value="Noto Sans TC" selected>Noto Sans TC</option>
+            <option value="DFKai-SB">標楷體</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="fontColor">字體顏色（預設 40% 灰）</label>
+          <div class="row" style="gap:8px">
+            <div class="col">
+              <select id="fontColor">
+                <option value="rgba(0,0,0,0.4)" selected>40% 灰（預設）</option>
+                <option value="#000000">黑</option>
+                <option value="#87CEFA">淺藍</option>
+                <option value="#FFB6C1">粉紅</option>
+                <option value="#808080">灰</option>
+                <option value="#FFD580">淺橙</option>
+                <option value="#90EE90">淺綠</option>
+              </select>
+            </div>
+            <div class="col" style="max-width:160px">
+              <input id="fontColorCustom" type="color" value="#666666" title="自訂顏色" />
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <label for="layoutDirection">文字排列方向</label>
+          <select id="layoutDirection">
+            <option value="h" selected>橫向排列</option>
+            <option value="v">垂直排列（實驗）</option>
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="gridFillDir">格仔填滿方向</label>
+          <select id="gridFillDir">
+            <option value="horizontal" selected>橫向填滿整頁</option>
+            <option value="vertical">垂直填滿整頁</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="inputText" style="margin-top:8px">練習文字</label>
       <div class="toolbar">
-        <button id="underlineBtn" class="btn btn-ghost">底線</button>
+        <button id="underlineBtn" class="btn">底線</button>
+        <div style="flex:1"></div>
+        <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
+          以圖片輸入
+          <input id="imageInput" type="file" accept="image/*" style="display:none">
+        </label>
+        <button id="extractBtn" class="btn">擷取文字（OCR）</button>
       </div>
       <textarea id="inputText">請輸入文章內容
 
 提示：
 輸入換行會在練習紙中換行，標點符號單獨佔格</textarea>
 
-      <div class="row" style="margin-top:12px">
-        <div class="col"><label>方格大小（mm，5–100）</label><input id="gridSize" type="number" value="10" min="5" max="100"></div>
-        <div class="col"><label>左右邊界（mm）</label><input id="marginSize" type="number" value="10" min="0" max="100"></div>
-        <div class="col"><label>字體</label><select id="fontSelect"><option value="Noto Sans TC" selected>Noto Sans TC</option><option value="DFKai-SB">標楷體</option></select></div>
-        <div class="col"><label>顏色</label><select id="fontColor"><option value="rgba(0,0,0,0.4)" selected>灰</option><option value="#000">黑</option><option value="#87CEFA">淺藍</option><option value="#FFB6C1">粉紅</option><option value="#FFD580">淺橙</option></select></div>
+      <div class="row" style="margin-top:10px">
+        <div class="col">
+          <label for="gridSize">方格大小（mm，5–100）</label>
+          <div class="number-wrap">
+            <input id="gridSize" type="number" value="10" min="5" max="100" step="1">
+            <div class="stepper">
+              <button data-step="grid" data-delta="-1">–</button>
+              <button data-step="grid" data-delta="1">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <label for="marginSize">左右邊界（mm）</label>
+          <div class="number-wrap">
+            <input id="marginSize" type="number" value="10" min="0" max="100" step="1">
+            <div class="stepper">
+              <button data-step="margin" data-delta="-1">–</button>
+              <button data-step="margin" data-delta="1">+</button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+      <div class="toolbar" style="margin-top:12px">
         <button id="generateBtn" class="btn btn-primary">生成練習紙</button>
-        <button id="downloadPdfBtn" class="btn btn-ghost">下載 PDF</button>
-        <button id="exportPngBtn" class="btn btn-ghost">匯出 PNG（可匯入 Canva）</button>
+        <button id="downloadPdfBtn" class="btn">下載 PDF</button>
+        <button id="exportPngBtn" class="btn">匯出 PNG（可匯入 Canva）</button>
+        <button id="printBtn" class="btn">列印</button>
       </div>
+      <div class="note">提示：若 OCR 上傳 HEIC，系統會自動轉成 JPG 再辨識。</div>
     </div>
 
     <div class="card"><div id="preview">預覽區</div></div>
-    <footer>© 中文練字紙 Chinese Handwriting Practice v3.0</footer>
+    <footer>© 中文練字紙 Chinese Handwriting Practice v3.1</footer>
   </div>
 
-  <!-- Load jsPDF reliably -->
   <script>
-    window.jsPDFReady = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = "https://cdn.jsdelivr.net/npm/jspdf@2.5.3/dist/jspdf.umd.min.js";
-      s.onload = resolve;
-      s.onerror = () => reject(new Error("jsPDF 載入失敗"));
-      document.head.appendChild(s);
-    });
-  </script>
+    // --- UI refs ---
+    const titleInput = document.getElementById('titleInput');
+    const inputText  = document.getElementById('inputText');
+    const gridSizeInput = document.getElementById('gridSize');
+    const marginSizeInput = document.getElementById('marginSize');
+    const fontSelect = document.getElementById('fontSelect');
+    const fontColor = document.getElementById('fontColor');
+    const fontColorCustom = document.getElementById('fontColorCustom');
+    const innerStyle = document.getElementById('innerStyle');
+    const layoutDirection = document.getElementById('layoutDirection');
+    const gridFillDir = document.getElementById('gridFillDir');
+    const orientation = document.getElementById('orientation');
 
-  <script>
-    const inputText=document.getElementById('inputText');
-    const gridSizeInput=document.getElementById('gridSize');
-    const marginSizeInput=document.getElementById('marginSize');
-    const fontSelect=document.getElementById('fontSelect');
-    const fontColorSelect=document.getElementById('fontColor');
-    const preview=document.getElementById('preview');
-    const generateBtn=document.getElementById('generateBtn');
-    const downloadPdfBtn=document.getElementById('downloadPdfBtn');
-    const exportPngBtn=document.getElementById('exportPngBtn');
-    const titleInput=document.getElementById('titleInput');
-    const underlineBtn=document.getElementById('underlineBtn');
-    let canvases=[];
+    const underlineBtn = document.getElementById('underlineBtn');
+    const imageInput = document.getElementById('imageInput');
+    const extractBtn = document.getElementById('extractBtn');
 
-    underlineBtn.onclick=()=>{
-      const t=inputText;
-      const s=t.selectionStart,e=t.selectionEnd;
-      if(s===e){alert('請先選取文字');return;}
-      t.value=t.value.slice(0,s)+'__'+t.value.slice(s,e)+'__'+t.value.slice(e);
-    };
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const exportPngBtn  = document.getElementById('exportPngBtn');
+    const printBtn = document.getElementById('printBtn');
 
-    function parseTextToRows(text,cols){
-      const lines=text.split('\n');const rows=[];
-      lines.forEach(line=>{
-        const chars=Array.from(line);
-        for(let i=0;i<chars.length;i+=cols)rows.push(chars.slice(i,i+cols));
-        if(chars.length===0)rows.push([]);
-      });return rows;
+    const preview = document.getElementById('preview');
+    let canvases = [];
+
+    // --- helpers ---
+    function mmToPx(mm, orient){
+      // map A4 width to px (approx CSS pixels)
+      const a4Wpx = orient==='landscape' ? 1122 : 793;
+      const a4Wmm = orient==='landscape' ? 297  : 210;
+      return mm * (a4Wpx / a4Wmm);
     }
 
-    function drawTianzige(ctx,x,y,size){
-      ctx.lineWidth=1;ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--line').trim()||'#FFE4B5';
-      ctx.strokeRect(x,y,size,size);
-      ctx.setLineDash([3,3]);
-      const cx=x+size/2,cy=y+size/2;
-      ctx.beginPath();ctx.moveTo(x+size/3,y);ctx.lineTo(x+size/3,y+size);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x+2*size/3,y);ctx.lineTo(x+2*size/3,y+size);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x,y+size/3);ctx.lineTo(x+size,y+size/3);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x,y+2*size/3);ctx.lineTo(x+size,y+2*size/3);ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    function mmToPx(mm){ return mm*3.78; } // rough A4 CSS pixel mapping
-
-    function createPage(text,gridMm,marginMm,font,fontColor){
-      const gridPx=mmToPx(gridMm),marginPx=mmToPx(marginMm);
-      const pageW=1122,pageH=793,usableW=pageW-marginPx*2;
-      const cols=Math.max(1, Math.floor(usableW/gridPx));
-      const rows=parseTextToRows(text,cols);
-      const canvas=document.createElement('canvas');
-      canvas.width=pageW;canvas.height=pageH;
-      const ctx=canvas.getContext('2d');
-      ctx.fillStyle='#fff';ctx.fillRect(0,0,pageW,pageH);
-      ctx.fillStyle=fontColor;ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.font=Math.floor(gridPx*0.6)+'px "'+font+'"';
-      rows.forEach((row,r)=>{
-        const y=80+r*gridPx;
-        for(let c=0;c<cols;c++){
-          const x=marginPx+c*gridPx;
-          drawTianzige(ctx,x,y,gridPx);
-          if(c<row.length){ const ch=row[c]; if(ch&&ch!==' ') ctx.fillText(ch,x+gridPx/2,y+gridPx/2); }
+    function tokenizeLine(line){
+      const tokens = [];
+      let i=0;
+      while(i<line.length){
+        if(line.startsWith('__', i)){
+          const j=line.indexOf('__', i+2);
+          if(j!==-1){
+            const inner=line.slice(i+2, j);
+            if(inner.length>0) tokens.push({text:inner, underline:true});
+            i=j+2; continue;
+          }
         }
-        // underline groups: merge __...__
-        let c=0;
-        while(c<row.length){
-          if(row[c]==='_' && row[c+1]==='_'){
-            // find closing __
-            let j=c+2;
-            while(j<row.length-1 && !(row[j]==='_' && row[j+1]==='_')) j++;
-            if(j<row.length-1){
-              const start=c+2, end=j-1;
-              const pad=gridPx*0.1, thickness=Math.max(1, Math.round(gridPx/20));
-              const ux=marginPx + start*gridPx + pad;
-              const uw=(end - start + 1)*gridPx - pad*2;
-              const uy=y + gridPx - Math.max(2, Math.round(gridPx*0.12));
-              ctx.fillStyle=fontColor; ctx.fillRect(ux, uy, uw, thickness);
-              c=j+2;
-              continue;
+        tokens.push({text: line[i], underline:false});
+        i++;
+      }
+      return tokens;
+    }
+    function expandTokensToCells(tokens){
+      const cells=[];
+      for(const t of tokens){
+        if(t.underline){
+          const start=cells.length;
+          for(const ch of Array.from(t.text)) cells.push({ch, underId:start});
+        }else{
+          for(const ch of Array.from(t.text)) cells.push({ch, underId:-1});
+        }
+      }
+      return cells;
+    }
+    function parseTextToRows(text, cols){
+      const lines=text.replace(/\r/g,'').split('\n'); const rows=[];
+      for(const line of lines){
+        const cells=expandTokensToCells(tokenizeLine(line));
+        for(let i=0;i<cells.length;i+=cols) rows.push(cells.slice(i,i+cols));
+        if(cells.length===0) rows.push([]);
+      }
+      return rows;
+    }
+
+    function drawTianzige(ctx,x,y,size,style){
+      ctx.lineWidth=1.2; ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--line').trim()||'#FFE4B5';
+      ctx.strokeRect(x,y,size,size);
+      ctx.save(); ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      const cx=x+size/2, cy=y+size/2;
+      if(style==='double'){
+        ctx.beginPath(); ctx.moveTo(x+size/3,y); ctx.lineTo(x+size/3,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+2*size/3,y); ctx.lineTo(x+2*size/3,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y+size/3); ctx.lineTo(x+size,y+size/3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y+2*size/3); ctx.lineTo(x+size,y+2*size/3); ctx.stroke();
+      }else if(style==='parallel'){
+        ctx.beginPath(); ctx.moveTo(cx,y); ctx.lineTo(cx,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x+size,cy); ctx.stroke();
+      }else if(style==='cross'){
+        ctx.beginPath(); ctx.moveTo(cx,y); ctx.lineTo(cx,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x+size,cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+size,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+size,y); ctx.lineTo(x,y+size); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function createPages(text, gridMm, marginMm, font, color, style, orient, fillDir, layoutDir){
+      const a4Wpx = orient==='landscape'?1122:793;
+      const a4Hpx = orient==='landscape'?793:1122;
+      const marginPx = mmToPx(marginMm, orient);
+      let gridPx = mmToPx(gridMm, orient);
+      const usableW = a4Wpx - 2*marginPx;
+      const topGap = 60;
+
+      // columns & rows per page
+      let cols = Math.max(1, Math.floor(usableW / gridPx));
+      if(fillDir === 'horizontal'){
+        gridPx = usableW / cols; // stretch to fit width
+      }else{
+        // fit vertically
+        const usableH = a4Hpx - topGap;
+        let rpp = Math.max(1, Math.floor(usableH / gridPx));
+        gridPx = usableH / rpp;
+      }
+      cols = Math.max(1, Math.floor(usableW / gridPx));
+      const rowsAll = parseTextToRows(text, cols);
+      const rowsPerPage = Math.max(1, Math.floor((a4Hpx - topGap) / gridPx));
+
+      const pages=[];
+      for(let i=0;i<rowsAll.length;i+=rowsPerPage) pages.push(rowsAll.slice(i,i+rowsPerPage));
+      if(pages.length===0) pages.push([[]]);
+
+      const canvases = pages.map((rowsOfPage, idx)=>{
+        const c = document.createElement('canvas');
+        c.width=a4Wpx; c.height=a4Hpx;
+        const ctx=c.getContext('2d');
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+
+        // title
+        ctx.fillStyle='#000'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+        ctx.font='20px "Noto Sans TC"';
+        ctx.fillText(titleInput.value || '中文練字紙', marginPx, 32);
+
+        // text
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle=color; ctx.font=Math.floor(gridPx*0.65)+'px "'+font+'"';
+
+        for(let r=0;r<rowsOfPage.length;r++){
+          const row=rowsOfPage[r]; const y=topGap + r*gridPx;
+          // grids
+          for(let ccol=0;ccol<cols;ccol++){
+            const x=marginPx + ccol*gridPx;
+            drawTianzige(ctx, x, y, gridPx, style);
+          }
+
+          // text (horizontal default; vertical is experimental — renders top-to-bottom per cell)
+          if(layoutDir==='v'){
+            for(let ccol=0; ccol<row.length; ccol++){
+              const cell=row[ccol]; if(!cell||!cell.ch) continue;
+              const x = marginPx + ccol*gridPx + gridPx/2;
+              const yTop = y + gridPx*0.2;
+              ctx.save();
+              ctx.translate(x, yTop);
+              ctx.rotate(-Math.PI/2);
+              ctx.fillText(cell.ch, 0, 0);
+              ctx.restore();
+            }
+          }else{
+            for(let ccol=0; ccol<row.length; ccol++){
+              const cell=row[ccol]; if(!cell||!cell.ch) continue;
+              const x = marginPx + ccol*gridPx + gridPx/2;
+              ctx.fillText(cell.ch, x, y + gridPx/2);
             }
           }
-          c++;
+
+          // underline spans: group contiguous cells with same underId
+          let cci=0;
+          while(cci<row.length){
+            const cell=row[cci];
+            if(cell && cell.underId>=0){
+              const gid=cell.underId; let j=cci;
+              while(j+1<row.length && row[j+1] && row[j+1].underId===gid) j++;
+              const pad = gridPx*0.1;
+              const thk = Math.max(1, Math.round(gridPx/20)); // ≈ 1/20 格高
+              const ux = marginPx + cci*gridPx + pad;
+              const uw = (j - cci + 1)*gridPx - pad*2;
+              const uy = y + gridPx - Math.max(2, Math.round(gridPx*0.12));
+              ctx.fillStyle=color; ctx.fillRect(ux, uy, uw, thk);
+              cci = j+1; continue;
+            }
+            cci++;
+          }
         }
+        return c;
       });
-      ctx.fillStyle='#000';ctx.font='24px "Noto Sans TC",sans-serif';ctx.textAlign='left';
-      ctx.fillText(titleInput.value,marginPx,40);
-      return canvas;
+
+      return canvases;
     }
+
+    // --- actions ---
+    underlineBtn.addEventListener('click', ()=>{
+      const ta=inputText, s=ta.selectionStart, e=ta.selectionEnd;
+      if(s===e){ alert('請先選取要加底線的文字'); return; }
+      ta.setRangeText('__' + ta.value.slice(s,e) + '__', s, e, 'end');
+    });
+
+    document.querySelectorAll('.stepper button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const t = btn.dataset.step === 'grid' ? gridSizeInput : marginSizeInput;
+        const delta = Number(btn.dataset.delta);
+        const v = Math.max(Number(t.min||0), Math.min(Number(t.max||999), Number(t.value||0)+delta));
+        t.value = v;
+      });
+    });
+
+    // color: custom overrides preset if changed
+    fontColorCustom.addEventListener('input', ()=> fontColor.value = fontColorCustom.value );
+
+    // OCR
+    extractBtn.addEventListener('click', async ()=>{
+      const f = imageInput.files && imageInput.files[0];
+      if(!f){ alert('請先選擇圖片'); return; }
+      extractBtn.disabled = true; extractBtn.textContent='辨識中…';
+      try{
+        let usedFile = f;
+        if(f.type==='image/heic' || f.name.toLowerCase().endsWith('.heic')){
+          const blob = await heic2any({ blob:f, toType:'image/jpeg', quality:0.92 });
+          usedFile = new File([blob], f.name.replace(/\.[^.]+$/,'') + '.jpg', { type:'image/jpeg' });
+        }
+        const { data:{ text } } = await Tesseract.recognize(usedFile, 'chi_sim', { logger:()=>{} });
+        if(text && text.trim()) inputText.value = text.trim();
+        else alert('未偵測到文字，請改用更清晰的照片');
+      }catch(e){ console.error(e); alert('辨識失敗：' + (e && e.message ? e.message : e)); }
+      finally{ extractBtn.disabled=false; extractBtn.textContent='擷取文字（OCR）'; }
+    });
 
     function generate(){
-      const text=inputText.value;
-      const font=fontSelect.value;
-      const fontColor=fontColorSelect.value;
-      const grid=parseFloat(gridSizeInput.value)||10;
-      const margin=parseFloat(marginSizeInput.value)||10;
-      canvases=[createPage(text,grid,margin,font,fontColor)];
-      preview.innerHTML=''; preview.appendChild(canvases[0]);
+      const canv = createPages(
+        inputText.value,
+        Math.max(5, Math.min(100, parseFloat(gridSizeInput.value)||10)),
+        Math.max(0, parseFloat(marginSizeInput.value)||10),
+        fontSelect.value,
+        (fontColor.value==='rgba(0,0,0,0.4)' ? 'rgba(0,0,0,0.4)' : (fontColorCustom.value||fontColor.value)),
+        innerStyle.value,
+        orientation.value,
+        gridFillDir.value,
+        layoutDirection.value
+      );
+      canvases = canv;
+      preview.innerHTML=''; canvases.forEach(c=>preview.appendChild(c));
     }
-    generateBtn.onclick=generate;
+    generateBtn.addEventListener('click', generate);
 
-    async function exportPDF(){
-      if(!canvases.length){alert('請先生成練習紙');return;}
+    downloadPdfBtn.addEventListener('click', ()=>{
+      if(!canvases.length){ alert('請先生成練習紙'); return; }
       try{
-        await window.jsPDFReady;
-        const {jsPDF}=window.jspdf;
-        const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-        const pageW=pdf.internal.pageSize.getWidth();
-        const img=canvases[0].toDataURL('image/png');
-        pdf.addImage(img,'PNG',10,10,pageW-20,0);
-        pdf.save('中文練字紙_v3.0.pdf');
-      }catch(e){ alert('PDF 生成失敗: '+e.message); }
-    }
-    downloadPdfBtn.onclick=exportPDF;
+        const { jsPDF } = window.jspdf || {};
+        if(!jsPDF) throw new Error('jsPDF 未就緒');
+        const orient = orientation.value==='portrait' ? 'p' : 'l';
+        const pdf = new jsPDF({orientation:orient, unit:'mm', format:'a4'});
+        const pageW = pdf.internal.pageSize.getWidth();
+        canvases.forEach((c, i)=>{
+          if(i>0) pdf.addPage();
+          const img = c.toDataURL('image/png');
+          pdf.addImage(img, 'PNG', 10, 10, pageW-20, 0);
+        });
+        pdf.save('中文練字紙.pdf');
+      }catch(e){ alert('PDF 生成失敗：' + e.message); }
+    });
 
-    function exportPNG(){
-      if(!canvases.length){alert('請先生成練習紙');return;}
-      const title=(titleInput.value||'中文練字紙').replace(/[\/:*?"<>|]/g,'').trim()||'sheet';
+    exportPngBtn.addEventListener('click', ()=>{
+      if(!canvases.length){ alert('請先生成練習紙'); return; }
+      const title=(titleInput.value||'中文練字紙').replace(/[\\/:*?"<>|]/g,'').trim()||'sheet';
       const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
       canvases.forEach((c,i)=>{
-        const name=`${title}_${dateStr}_p${i+1}.png`;
-        c.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; a.click(); }, 'image/png');
+        c.toBlob(b=>{
+          const a=document.createElement('a');
+          a.href=URL.createObjectURL(b);
+          a.download=`${title}_${dateStr}_p${i+1}.png`;
+          document.body.appendChild(a); a.click(); a.remove();
+        }, 'image/png');
       });
-    }
-    exportPngBtn.onclick=exportPNG;
+    });
 
-    // Auto-generate on load for preview
-    window.addEventListener('load', ()=> setTimeout(generate, 300));
+    printBtn.addEventListener('click', ()=>{
+      if(!canvases.length){ alert('請先生成練習紙'); return; }
+      const w = window.open('', '_blank');
+      w.document.write('<html><head><title>列印</title><style>body{margin:0} img{width:100%;page-break-after:always;display:block}</style></head><body>');
+      canvases.forEach(c=> w.document.write('<img src="'+c.toDataURL('image/png')+'">') );
+      w.document.write('</body></html>');
+      w.document.close(); setTimeout(()=>w.print(), 400);
+    });
+
+    // 初始預覽
+    window.addEventListener('load', ()=> setTimeout(generate, 200));
   </script>
 </body>
 </html>
