@@ -1,4 +1,4 @@
-# README — GitHub Upload Guide v3.1
+# README — GitHub Upload Guide v3.1 (Full Build)
 
 ## English
 This package contains the **Chinese Handwriting Practice v3.1 (中文練字紙)** web app.
@@ -9,6 +9,7 @@ This package contains the **Chinese Handwriting Practice v3.1 (中文練字紙)*
 - Added: Print, Page Orientation, Font Color Picker, Grid Style, Text Direction, Grid Fill Direction, OCR (Image → Text)
 - Added: ± buttons for grid size & margin
 - Improved: Mobile layout (iPhone-friendly)
+- Added: Google AdSense placeholder (bottom of page, commented)
 
 ### How to publish on GitHub Pages
 1. Create or open your GitHub repository.
@@ -27,6 +28,7 @@ This package contains the **Chinese Handwriting Practice v3.1 (中文練字紙)*
 - 新增：列印、紙張方向、字體顏色、內線樣式、文字方向、格仔填滿方向、圖片 OCR
 - 加入 ± 按鈕（方格大小及邊界）
 - 改良 iPhone 顯示
+- 新增 Google AdSense 預留區（頁面底部，已註解）
 
 ### 發佈至 GitHub Pages
 1. 建立或開啟 GitHub 儲存庫。

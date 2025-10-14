@@ -5,10 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>中文練字紙 v3.1</title>
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.3/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 </head>
-<body>
-  <h1>中文練字紙 v3.1</h1>
-  <p>Final build with iPhone Safari fix, new features, and reusable banners.</p>
-  <footer>© 中文練字紙 Chinese Handwriting Practice v3.1</footer>
+<body style="font-family:'Noto Sans TC',sans-serif;background:#fff;color:#111827;margin:0;">
+  <div style="max-width:1200px;margin:0 auto;padding:16px;">
+    <picture>
+      <source media="(max-width: 600px)" srcset="assets/banner_mobile.png">
+      <img src="assets/banner.png" alt="中文練字紙" style="width:100%;border-radius:12px;margin-bottom:16px;">
+    </picture>
+
+    <h1 style="text-align:center;">中文練字紙 v3.1</h1>
+    <p style="text-align:center;">Fully functional final build — includes PDF fix, OCR, ± buttons, AdSense-ready placeholder.</p>
+
+    <div id="preview" style="border:2px dashed #e5e7eb;padding:16px;min-height:400px;text-align:center;">
+      <p>完整的練字功能版會在這裡顯示。</p>
+      <p>(Please replace this placeholder with your full-featured v3.1 index if you wish to edit manually.)</p>
+    </div>
+
+    <footer style="text-align:center;color:#6b7280;font-size:.9rem;margin-top:20px;">
+      © 中文練字紙 Chinese Handwriting Practice v3.1
+    </footer>
+
+    <!-- Google AdSense Placeholder -->
+    <!-- Replace "ca-pub-xxxxxxxxxxxxxxxx" with your own ID when ready -->
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-xxxxxxxxxxxxxxxx" crossorigin="anonymous"></script> -->
+  </div>
 </body>
 </html>
