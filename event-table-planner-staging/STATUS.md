@@ -2,69 +2,51 @@
 
 Checkpoint: 2026-09-18
 
-> This directory is the temporary remote-staging host and checkpoint, not the canonical V0.28 product repository. The canonical final V0.28 `index.html` has been recovered from File Library evidence, but the exact final `app.js / styles.css / event-core.js / webmcp.js` bundle is still not available through the connected repository or File Library search. Do not mix older runtime files into V0.28.
+> Temporary remote-staging host/checkpoint only. It is not the canonical V0.28 repository. Final V0.28 `index.html` and final UAT evidence are recoverable, but the exact final `app.js / styles.css / event-core.js / webmcp.js` bundle is still unavailable. Older runtime files must not be mixed into V0.28.
 
 ## Current state
 
-- Remote console build: **R8**
-- R8 commit: `bf4934167a3a64d529edd24b71ba1eb76f61a5d5`
-- GitHub Pages deployment workflow: **SUCCESS**
+- Remote console: **R11**
+- R11 commit: `e772192348cdec76da1cee833f43119c75030e4b`
 - Product baseline: **V0.28 — Final Production Candidate**
-- Hosting: GitHub Pages
 - Console: https://anyumai-png.github.io/calligraphy-generator/event-table-planner-staging/
 - Guest Portal: https://anyumai-png.github.io/calligraphy-generator/event-table-planner-staging/guest/
-- Backend: Supabase staging project `vdmnfzrwxtvscutqozmx`
+- Backend: Supabase staging `vdmnfzrwxtvscutqozmx`
 - Event: `Annual Dinner 2026 — STAGING`
-- Tables: **20**
-- Guests: **0**
-- Memberships: **1 Organizer**
+- Clean checkpoint: **20 Tables / 0 Guests / 0 Tasks / 0 Run items / 1 Organizer / 0 leases / 0 publications**
 - Seating stage: **draft**
 - Publish revision: **0**
-- Active edit leases: **0**
-- Publications: **0**
 
 ## Remote capabilities
 
-- Email/password sign-in and first Organizer claim
-- Team role assignment
-- Organizer / Reception / Floor / Viewer role boundaries
-- Role-aware task views: Overview / Floor / Guests / Reception / Admin
-- 20-table dashboard and real-coordinate Floor Plan
-- Organizer edit lease + touch/pointer drag
-- Server-side lease enforcement for layout writes
-- Table Maintenance: name, zone, capacity, color
-- Capacity guard against occupied Working / Published seats
-- Normalized Guest Groups and table eligibility
-- Add Guest and CSV import
-- RSVP edit with field-version concurrency
-- Atomic check-in +/-
-- Working seating move with revision guard
+- Role-aware views: Overview / Floor / Guests / Reception / Run / Admin
+- Organizer / Reception / Floor / Viewer authorization surfaces
+- Guest creation and full-field transactional CSV bulk import
+- Normalized Guest Groups + table-group eligibility
+- RSVP / atomic check-in / concurrency-safe Working seating
+- Editable real-coordinate Floor Plan with server-enforced Organizer lease
+- Table Maintenance with occupied-seat capacity guard
 - Human-confirmed atomic Publish
-- Published-only Guest Portal and guest links
-- Realtime updates
-- R7 network resilience: stale-data state, reconnect backoff, foreground refresh, mutation stale guard, layout edit pause on disconnect
+- Published-only Guest Portal
+- Event Tasks + Run of Show with role-based writes and Realtime updates
+- R7 stale/offline state machine, channel rebuild and stale-mutation guard
+- Emergency Pack: Guest CSV, Table CSV and printable snapshot
+- CSV formula-injection mitigation on Emergency Pack exports
 
-## Verified external environment gates
+## Verified gates
 
-- GitHub Pages deployed-origin rendering: **PASS**
-- R8 deployed build identity: **PASS**
-- Guest Portal route: **PASS**
-- Core two-identity / two-connection DB race tests: **PASS**
-  - different-field Guest edits
-  - same-field Guest conflict
-  - simultaneous check-in increments
-  - simultaneous same-Guest seating moves
-  - simultaneous Publish
-  - simultaneous Floor Plan lease acquisition
+- GitHub Pages deployed origin: **PASS**
+- R11 deployed build identity + external browser smoke: **PASS**
+- Official-scale structural import: **121 bookings / 232 confirmed / 6 pending / 4 declined**
+- Bulk import database execution: **~34.28 ms** in the measured staging transaction
+- True parallel two-identity races: **PASS**
+- Task identity concurrency: **PASS**
+- Run-of-Show identity + serialized sort order: **PASS (0 / 1)**
 
-## Last completed loop
+## Remaining highest-priority gates
 
-R8 task-oriented operations UI + true parallel Supabase concurrency gate.
-
-## Next highest-priority work
-
-1. Four independent real browser Auth personas: Organizer / Reception / Floor / Viewer.
-2. Physical weak-network/offline → reconnect UAT on phone/tablet.
-3. Recover/reconnect the exact canonical V0.28 runtime bundle and upstream staging-proven migrations/hotfixes.
-4. Replace the temporary staging shell with the canonical V0.28 visual UI.
-5. Final native WebMCP deployed-origin validation after canonical runtime recovery.
+1. Four independent real browser Auth personas.
+2. Real phone/tablet network interruption → reconnect UAT.
+3. Actual browser file-picker import of the official 121-booking CSV.
+4. Recover/reconnect exact canonical V0.28 runtime and upstream all staging-proven changes.
+5. Native WebMCP final-origin validation on the canonical build.
