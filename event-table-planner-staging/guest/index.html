@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#172033">
+<meta name="robots" content="noindex,nofollow">
+<title>Event Table Planner — Guest</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#eef2f6}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#172033 0,#172033 180px,#eef2f6 180px);min-height:100vh}.wrap{max-width:680px;margin:auto;padding:24px 14px 40px}.brand{color:white;padding:8px 4px 26px}.brand b{font-size:20px}.brand small{display:block;color:#b8c5d6;margin-top:4px}.card{background:white;border:1px solid #dfe5ec;border-radius:20px;padding:20px;box-shadow:0 14px 40px #1720331a;margin-bottom:14px}.hero{text-align:center;padding:28px 18px}.eyebrow{font-size:12px;color:#66758b;text-transform:uppercase;letter-spacing:.08em}.guest{font-size:30px;font-weight:800;margin:6px 0 4px}.event{color:#526176}.assignment{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.box{background:#f7f9fb;border-radius:14px;padding:14px}.box span{display:block;color:#6e7c8e;font-size:11px}.box b{display:block;font-size:20px;margin-top:3px}.muted{color:#6e7c8e;font-size:13px}.pill{display:inline-block;background:#edf2f7;border-radius:999px;padding:5px 9px;font-size:11px;margin:3px}.people{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.status{padding:14px;border-radius:14px;background:#fff3cd;border:1px solid #f3d47a}.err{background:#fff1f0;border-color:#f1b7b2;color:#8c2c24}.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}button{font:inherit;border:0;border-radius:10px;padding:10px 13px;font-weight:700;background:#e8edf3;color:#1e2a3a;cursor:pointer}.hidden{display:none!important}@media(max-width:520px){.assignment{grid-template-columns:1fr}.guest{font-size:26px}.wrap{padding:16px 10px 30px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand"><b>Event Table Planner</b><small>Guest seating information · Published view</small></div>
+  <section id="loading" class="card"><div class="status">Loading your published seating…</div></section>
+  <section id="error" class="card hidden"><div class="status err" id="errorText">Invitation unavailable.</div></section>
+  <section id="portal" class="hidden">
+    <div class="card hero">
+      <div class="eyebrow" id="eventName">Event</div>
+      <div class="guest" id="guestName">Guest</div>
+      <div class="event" id="guestFlags"></div>
+      <div class="assignment">
+        <div class="box"><span>TABLE</span><b id="tableText">—</b><div class="muted" id="zoneText"></div></div>
+        <div class="box"><span>SEAT</span><b id="seatText">—</b><div class="muted" id="partyText"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row"><div><b>Table companions</b><div class="muted">Published roster only</div></div><button id="refresh">Refresh</button></div>
+      <div class="people" id="people"></div>
+      <div class="muted" id="otherPeople" style="margin-top:8px"></div>
+    </div>
+    <div class="card"><div class="row"><div class="muted">Last refreshed</div><div class="muted" id="refreshedAt">—</div></div></div>
+  </section>
+</main>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const URL='https://vdmnfzrwxtvscutqozmx.supabase.co';
+const KEY='sb_publishable_hSIjqGREM3wC1QW2Z8vDpg_iMRgUJdP';
+const sb=createClient(URL,KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+const $=s=>document.querySelector(s);
+const token=new URLSearchParams(location.search).get('token')||'';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fail(message){$('#loading').classList.add('hidden');$('#portal').classList.add('hidden');$('#error').classList.remove('hidden');$('#errorText').textContent=message}
+function render(r){
+  $('#loading').classList.add('hidden');$('#error').classList.add('hidden');$('#portal').classList.remove('hidden');
+  document.title=(r.event_name||'Event')+' — '+(r.guest_name||'Guest');
+  $('#eventName').textContent=r.event_name||'Event';
+  $('#guestName').textContent=r.guest_name||'Guest';
+  const flags=[];if(r.guest_is_principal)flags.push('Principal Guest');if(r.guest_vip)flags.push('VIP');$('#guestFlags').textContent=flags.join(' · ');
+  $('#tableText').textContent=r.table_id?(r.table_no?'Table '+r.table_no:(r.table_name||'Assigned')):'Not assigned';
+  $('#zoneText').textContent=[r.table_name,r.zone_label||r.zone].filter(Boolean).join(' · ');
+  const seats=Array.isArray(r.seat_numbers)?r.seat_numbers:[];
+  $('#seatText').textContent=seats.length?seats.join(', '):'—';
+  $('#partyText').textContent='Party size '+Number(r.party_size||1);
+  const names=Array.isArray(r.table_guest_names)?r.table_guest_names:[];
+  $('#people').innerHTML=names.length?names.map(n=>'<span class="pill">'+esc(typeof n==='string'?n:(n?.name||''))+'</span>').join(''):'<span class="muted">No published companion names.</span>';
+  $('#otherPeople').textContent=Number(r.table_other_people||0)>0?('Plus '+r.table_other_people+' other people at this table.'):'';
+  $('#refreshedAt').textContent=new Date().toLocaleTimeString();
+}
+async function load(){
+  if(!token)return fail('Invalid invitation link.');
+  const {data,error}=await sb.rpc('get_guest_portal',{p_token:token});
+  if(error)return fail('Invitation unavailable. Please ask the event organizer for a new link.');
+  const row=Array.isArray(data)?data[0]:data;
+  if(!row)return fail('Seating has not been published for this invitation yet.');
+  render(row);
+}
+$('#refresh').onclick=load;
+load();
+setInterval(()=>{if(document.visibilityState==='visible')load()},10000);
+</script>
+</body>
+</html>
