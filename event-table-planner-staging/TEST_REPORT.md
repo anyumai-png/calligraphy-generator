@@ -2,17 +2,37 @@
 
 Checkpoint: 2026-09-18
 
-## Deployed-origin smoke
+## Critical client-runtime correction
 
-- R8 deployed identity / task navigation: PASS
-- R9 Run workspace DOM + runtime smoke: PASS
-- R10 full-field bulk import UI DOM + runtime smoke: PASS
-- R11 Emergency Pack DOM + runtime smoke: PASS
-- No raw HTML / blank screen / visible module errors: PASS
-- Guest Portal route and invalid-token privacy state: PASS
+A full-source V8 parse performed on the historical staging commits found:
+- R6: **PARSE PASS**
+- R7: **PARSE FAIL**
+- R8: **PARSE FAIL**
+- R9: **PARSE FAIL**
+- R10: **PARSE FAIL**
+- R11: **PARSE FAIL**
+- R12 / R12.1: inherited failure
+- R12.2: **PARSE PASS**
 
-## Authorization
+Root cause: an extra closing brace after `renderNetworkState()`, introduced in R7.
 
+Therefore all earlier R7–R12.1 browser “runtime smoke” claims are reclassified as **static HTML/deployment smoke only**. They cannot be used as proof of JavaScript execution.
+
+## R12.2 client validation
+
+- GitHub Pages deployment: PASS
+- deployed build identity R12.2: PASS
+- full module V8 parse: PASS
+- Forgot Password button handler actually executes: PASS
+- visible success status produced: PASS
+- Supabase password recovery accepted: PASS
+- `auth.users.recovery_sent_at`: populated
+- recovery-link new-password screen: source implemented; end-to-end link click pending user inbox action
+- authenticated Organizer UI regression: pending password reset/sign-in
+
+## Backend authorization
+
+These tests were executed directly against Supabase and remain valid:
 - Organizer team / guest / seating / layout / Publish: PASS
 - Reception guest / seating / check-in: PASS
 - Reception team admin and Run-of-Show edit denied: PASS
@@ -20,24 +40,24 @@ Checkpoint: 2026-09-18
 - Floor guest-master / seating / Run-of-Show edit denied: PASS
 - Viewer read-only; guest/task mutations denied: PASS
 
-## True parallel concurrency
+## True parallel backend concurrency
 
-- Different Guest fields simultaneously: both merge safely — PASS
-- Same Guest field simultaneously: one success + one 40001 — PASS
-- Simultaneous +1 / +1 arrivals: final arrival 2 — PASS
-- Same Guest simultaneous seating moves: one success + one 40001 — PASS
-- Simultaneous Publish revision: one success + one 40001 — PASS
-- Simultaneous Floor Plan lease: one acquired + one blocked — PASS
-- Parallel Task create: distinct identity IDs — PASS
-- Parallel Run item create: distinct IDs + sort_order 0 / 1 — PASS
+- different Guest fields simultaneously: merge safely — PASS
+- same Guest field: one success + one 40001 — PASS
+- simultaneous +1 / +1 arrivals: final arrival 2 — PASS
+- same Guest simultaneous seating moves: one success + one 40001 — PASS
+- simultaneous Publish revision: one success + one 40001 — PASS
+- simultaneous Floor Plan lease: one acquired + one blocked — PASS
+- parallel Task create: distinct identity IDs — PASS
+- parallel Run item create: distinct IDs + sort_order 0 / 1 — PASS
 
-## Data / import integrity
+## Data / import backend integrity
 
-- Full-field single-row import: PASS
-- Normalized Group ID: PASS
-- Duplicate Name + Company skip: PASS
+- full-field single-row import: PASS
+- normalized Group ID: PASS
+- duplicate Name + Company skip: PASS
 - Floor bulk import denied: PASS
-- 121-row structural scale import:
+- 121-row Supabase scale import:
   - bookings 121
   - confirmed 232
   - pending 6
@@ -46,19 +66,18 @@ Checkpoint: 2026-09-18
   - group counts: 主家 12 / 供應商 25 / 客戶 44 / 同事 18 / 朋友 22
   - measured DB transaction ~34.28 ms
   - PASS
-- All scale/probe data rolled back or deleted.
 
-## Other retained gates
+## Other backend gates
 
 - Guest Portal Working/Published isolation: PASS
 - Table capacity shrink guard: PASS
 - Floor Plan lease enforcement: PASS
-- Stale position update rejection: PASS
-- Atomic check-in: PASS
-- Stale Publish guard: PASS
+- stale position update rejection: PASS
+- atomic check-in: PASS
+- stale Publish guard: PASS
 - Security Advisor anonymous definer surface: only intentional Guest Portal
 
-## Clean-state verification
+## Clean business-data state
 
 - Tables: 20
 - Guests: 0
@@ -70,10 +89,12 @@ Checkpoint: 2026-09-18
 - Stage: draft
 - Publish revision: 0
 
-## Remaining environment tests
+## Remaining client/environment tests
 
-- Four independent real browser Auth accounts.
-- Real mobile/tablet network interruption and recovery.
-- Exact official CSV through authenticated browser file picker.
-- Exact canonical V0.28 deployed runtime.
-- Native WebMCP on final canonical deployed origin.
+- click newest recovery email link, set new password, then sign in
+- authenticated Organizer R12.2 browser UAT
+- four independent real browser Auth accounts
+- real mobile/tablet offline → reconnect
+- exact official CSV through authenticated browser file picker
+- exact canonical V0.28 deployed runtime
+- native WebMCP on final canonical deployed origin
