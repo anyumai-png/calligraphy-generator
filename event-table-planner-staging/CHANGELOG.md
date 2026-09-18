@@ -1,67 +1,62 @@
 # Event Table Planner — Remote Staging CHANGELOG
 
-## 2026-09-18 — R11
+## 2026-09-18 — R12.2
 
-- Added human-triggered Emergency Pack from the last confirmed in-browser snapshot.
-- Added Guests CSV and Tables CSV download.
-- Added printable event pack with summary + guest seating/check-in data.
-- Export is restricted to Owner / Organizer / Reception.
-- No permanent local guest-data cache is created by this feature.
-- Added CSV formula-injection mitigation for values beginning with =, +, - or @.
-- R11 GitHub Pages deployment and external runtime smoke: PASS.
+- Found and fixed a critical client module syntax regression first introduced in R7.
+- Root cause: an extra closing brace after `renderNetworkState()`.
+- R7, R8, R9, R10, R11, R12 and R12.1 inherited the malformed module.
+- Static HTML still rendered, which caused earlier visual smoke tests to overstate runtime health.
+- Added an explicit V8 parse gate against the full module before commit.
+- Full R12.2 module parse: PASS.
+- Added/retained standard Supabase Password Recovery:
+  - Forgot Password
+  - recovery-link `PASSWORD_RECOVERY` state
+  - in-browser Set New Password
+  - sign out after password update
+- Added reset-request timeout and visible exception handling.
+- Actual Forgot Password JavaScript handler execution verified.
+- Supabase `auth.users.recovery_sent_at` updated, proving the recovery request was accepted.
+
+### Test-record correction
+
+Earlier R7–R12.1 “runtime smoke PASS” entries are reclassified as **static page/deployment smoke only**. They do not prove module JavaScript execution. Backend/RPC/database tests from those rounds remain valid because they were executed independently of the browser module.
+
+## R11
+
+- Added Emergency Pack source functionality: Guests CSV, Tables CSV and printable snapshot.
+- Added CSV formula-injection mitigation.
+- Historical note: deployment/static DOM was verified, but JavaScript runtime execution was not valid until the R12.2 syntax repair.
 
 ## R10
 
-- Replaced per-row CSV import with one transactional JSON RPC.
-- Added canonical CSV fields: Name, Company, Group, Title, Party Size, Companion Label, Principal / 主角, VIP, Dietary, RSVP, Invitation, Notes.
-- Added server-side normalized Group resolution.
-- Exact Name + Company duplicates are skipped server-side.
-- Import is limited to 500 rows per transaction.
-- Floor cannot bulk import.
-- 121-row structural scale regression:
-  - 121 bookings
-  - 232 confirmed people
-  - 6 pending
-  - 4 declined
-  - 121 normalized group IDs
-  - measured DB execution ~34.28 ms
-- R10 deployed runtime smoke: PASS.
+- Replaced per-row CSV import source path with one transactional JSON RPC.
+- Added canonical CSV fields.
+- 121-row real Supabase backend scale regression passed.
+- Historical note: browser static DOM was verified; authenticated client execution requires revalidation on R12.2.
 
 ## R9
 
-- Added Run work view.
-- Added Event Tasks board.
-- Added Run of Show timeline.
-- Organizer / Reception / Floor may create/update Tasks; Viewer read-only.
-- Organizer / Owner controls Run of Show.
-- Added task/run Realtime subscriptions.
-- Added authoritative staging RPCs for Task create/status and Run item create.
-- Corrected initial assumption about IDs: both tables use GENERATED ALWAYS identity.
-- Parallel Task create generated distinct IDs.
-- Parallel Run item create generated distinct IDs and serialized sort_order 0 / 1.
-- R9 deployed runtime smoke: PASS.
+- Added Run view, Event Tasks and Run of Show source functionality.
+- Backend role/RPC and parallel-ID tests passed independently.
+- Historical browser runtime claim superseded by R12.2 correction.
 
 ## R8
 
-- Added role-aware task views: Overview / Floor / Guests / Reception / Admin.
-- Reception view focuses confirmed guests and arrivals.
-- Added URL hash view persistence.
-- Added Unassigned and Pending metrics.
-- True parallel Supabase race suite passed for Guest fields, check-in, seating, Publish and Floor Plan lease.
+- Added role-aware task views.
+- Backend true-parallel race suite passed independently.
+- Historical browser runtime claim superseded by R12.2 correction.
 
 ## R7
 
-- Added explicit stale/offline state.
-- Added reconnect backoff, channel rebuilding, online/offline handling and foreground refresh.
-- Mutations revalidate stale snapshots before consequential writes.
-- Floor Plan editing pauses when connection confidence is lost.
+- Added reconnect/stale-data source logic.
+- Introduced the extra-brace syntax defect later fixed by R12.2.
 
 ## R6 and earlier
 
+- R6 is the last pre-regression client version confirmed to parse before the R7 change.
 - Table Maintenance with capacity guard.
 - Server-enforced Floor Plan lease.
 - Published-only Guest Portal.
 - Normalized Guest Groups.
 - Team role management.
 - Live Supabase staging migration chain and 22/22 structural verification.
-- Anonymous EXECUTE hardening; only intentional anonymous RPC is `get_guest_portal`.
