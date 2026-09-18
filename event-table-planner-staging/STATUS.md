@@ -6,47 +6,70 @@ Checkpoint: 2026-09-18
 
 ## Current state
 
-- Remote console: **R11**
-- R11 commit: `e772192348cdec76da1cee833f43119c75030e4b`
+- Remote console: **R12.2**
+- R12.2 commit: `94f75d958e1445180b3e7815fa2bf1243cd80fee`
 - Product baseline: **V0.28 — Final Production Candidate**
 - Console: https://anyumai-png.github.io/calligraphy-generator/event-table-planner-staging/
 - Guest Portal: https://anyumai-png.github.io/calligraphy-generator/event-table-planner-staging/guest/
 - Backend: Supabase staging `vdmnfzrwxtvscutqozmx`
 - Event: `Annual Dinner 2026 — STAGING`
-- Clean checkpoint: **20 Tables / 0 Guests / 0 Tasks / 0 Run items / 1 Organizer / 0 leases / 0 publications**
+- Clean business-data checkpoint: **20 Tables / 0 Guests / 0 Tasks / 0 Run items / 1 Organizer / 0 leases / 0 publications**
 - Seating stage: **draft**
 - Publish revision: **0**
+- Organizer account: confirmed; password-recovery email successfully requested on 2026-09-18.
 
-## Remote capabilities
+## Critical regression corrected in R12.2
+
+R7 introduced an extra closing brace after `renderNetworkState()`. The static page continued to render, but the module script did not parse. R8–R12.1 inherited the same defect.
+
+R12.2:
+- removes the extra brace;
+- runs a full V8 parse gate over the entire module before commit;
+- passes the parse gate;
+- proves actual client JavaScript execution through the Forgot Password flow;
+- successfully sends a Supabase password-recovery request and updates `auth.users.recovery_sent_at`.
+
+Previous R7–R12.1 “runtime smoke” records must be interpreted as **static HTML/deployment smoke only**, not JavaScript runtime validation.
+
+## Remote capabilities present in the R12.2 source
 
 - Role-aware views: Overview / Floor / Guests / Reception / Run / Admin
 - Organizer / Reception / Floor / Viewer authorization surfaces
 - Guest creation and full-field transactional CSV bulk import
 - Normalized Guest Groups + table-group eligibility
 - RSVP / atomic check-in / concurrency-safe Working seating
-- Editable real-coordinate Floor Plan with server-enforced Organizer lease
+- Editable Floor Plan with server-enforced Organizer lease
 - Table Maintenance with occupied-seat capacity guard
 - Human-confirmed atomic Publish
 - Published-only Guest Portal
-- Event Tasks + Run of Show with role-based writes and Realtime updates
-- R7 stale/offline state machine, channel rebuild and stale-mutation guard
-- Emergency Pack: Guest CSV, Table CSV and printable snapshot
-- CSV formula-injection mitigation on Emergency Pack exports
+- Event Tasks + Run of Show
+- R7 reconnect/stale-data logic
+- Emergency Pack exports
+- Password recovery and in-browser new-password flow
 
-## Verified gates
+## Verified gates that remain valid
 
-- GitHub Pages deployed origin: **PASS**
-- R11 deployed build identity + external browser smoke: **PASS**
-- Official-scale structural import: **121 bookings / 232 confirmed / 6 pending / 4 declined**
-- Bulk import database execution: **~34.28 ms** in the measured staging transaction
-- True parallel two-identity races: **PASS**
+Backend/database tests were not affected by the client syntax defect:
+- official-scale structural import: **121 bookings / 232 confirmed / 6 pending / 4 declined**
+- measured bulk import DB execution: **~34.28 ms**
+- true parallel two-identity races: **PASS**
 - Task identity concurrency: **PASS**
 - Run-of-Show identity + serialized sort order: **PASS (0 / 1)**
+- RLS / authoritative RPC role tests: **PASS**
+- Security Advisor anonymous surface: only intentional Guest Portal
 
-## Remaining highest-priority gates
+Client/deployment:
+- R12.2 GitHub Pages deployment: **PASS**
+- full module V8 parse: **PASS**
+- Forgot Password handler real execution: **PASS**
+- Supabase recovery request recorded: **PASS**
 
-1. Four independent real browser Auth personas.
-2. Real phone/tablet network interruption → reconnect UAT.
-3. Actual browser file-picker import of the official 121-booking CSV.
-4. Recover/reconnect exact canonical V0.28 runtime and upstream all staging-proven changes.
-5. Native WebMCP final-origin validation on the canonical build.
+## Highest-priority next gates
+
+1. Complete password reset from the emailed recovery link and sign in with the new password.
+2. Re-run authenticated browser UAT on R12.2 for Organizer views and mutations.
+3. Four independent real browser Auth personas.
+4. Real phone/tablet network interruption → reconnect UAT.
+5. Actual browser file-picker import of the official 121-booking CSV.
+6. Recover/reconnect exact canonical V0.28 runtime and upstream all staging-proven changes.
+7. Native WebMCP final-origin validation on the canonical build.
