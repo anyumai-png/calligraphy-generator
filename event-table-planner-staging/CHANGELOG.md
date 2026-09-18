@@ -1,6 +1,47 @@
 # Event Table Planner — Remote Staging CHANGELOG
 
-## 2026-09-18 — R6
+## 2026-09-18 — R8
+
+- Reworked the temporary console into role-aware task views:
+  - Overview
+  - Floor
+  - Guests
+  - Reception
+  - Admin
+- Added role-specific allowed/default views.
+- Added URL hash persistence with `#view=...`.
+- Added Unassigned and Pending overview metrics.
+- Reception view focuses confirmed guests and check-in, removing seating/admin clutter.
+- GitHub Pages workflow for R8 completed successfully.
+- Deployed `.build` identity verified as **R8 · GitHub Pages**.
+- Static deployed DOM verified to contain all five operations navigation buttons.
+
+### True parallel concurrency gate
+
+Used two independent Supabase connection calls and two different user identities.
+
+- Different Guest fields updated concurrently: both succeed and merge.
+- Same Guest field updated concurrently: one succeeds; the other receives `40001 concurrent guest field update`.
+- Two simultaneous arrival increments: final arrival count is 2 with no lost update.
+- Same Guest simultaneously moved to two different Tables: one succeeds; the other receives `40001 concurrent seating update`.
+- Two Organizers publish the same expected revision concurrently: one succeeds; the other receives `40001 concurrent publish revision`.
+- Two Organizers acquire the same Floor Plan lease concurrently: one `acquired=true`, the other `acquired=false`.
+
+All race fixtures and the isolated synthetic event were deleted after validation.
+
+## R7
+
+- Added explicit stale/offline state instead of pretending the last snapshot is live.
+- Preserves the last confirmed data on transient fetch failures.
+- Added exponential reconnect/backoff.
+- Rebuilds failed Realtime channels rather than only changing the status dot.
+- Added online/offline event handling.
+- Added foreground refresh after returning to the tab/app.
+- Critical mutations revalidate data if the last confirmed load is stale.
+- Floor Plan editing is paused if connection confidence is lost.
+- External R7 browser smoke PASS.
+
+## R6
 
 - Added Table Maintenance for Organizer / Reception.
 - Table number remains read-only in the temporary console.
@@ -46,7 +87,7 @@
 ## Earlier staging hardening
 
 - Created live Supabase staging project and 20-table fixture.
-- Applied V0.8 → V0.26.2 migration chain.
+- Applied the required V0.8 → V0.26.2 database evolution.
 - Post-migration structural gate 22/22 PASS.
 - Fixed anonymous EXECUTE exposure on operational SECURITY DEFINER RPCs.
 - Removed legacy deterministic Guest Portal token lookup.
